@@ -10,5 +10,5 @@ Installation guide:
 
 3.run the node server
 4.Access the website at http://localhost:9615
-5.This programme use the testnet3 chain.
-6.This is no error handle in this programme.Please make sure your input is right for getting a result.(no extra space)
+5.This program use the testnet3 chain.
+6.This is no error handle in this program.Please make sure your input is right for getting a result.(no extra space)
