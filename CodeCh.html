@@ -1,33 +1,73 @@
 <!DOCTYPE HTML>
 <html> 
-<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js">
-</script>
+<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
     function getBalance(){
         var data;
-        var addr = document.getElementById(1).value;
+        var addr = document.getElementById('addr').value;
         var url = 'https://api.blockcypher.com/v1/btc/test3/addrs/' + addr + '/balance';
         respone = $.get(url).then(function(d) {data=d});
         setTimeout(function(){
-            console.log(data.balance);
-}, 3000);
-        
-    
+            console.log(data);
+        }, 3000);       
+    }
+    function applyTx(){
+        var output = document.getElementById('receiver').value;
+        var input = document.getElementById('payor').value;
+        var amount = parseFloat(document.getElementById('amount').value);
+        output = 'mpXfRRcg2x1k5PNEbWiseY1Hm75Y1PqxkT';
+        input = 'myKawjLyRXdorDDAE5cjtyT7JzJF2DH5eK';
+        amount = 1000000;
+        var newtx = {
+            inputs: [{addresses: [input]}],
+            outputs: [{addresses: [output], value: amount}]
+        };
+        var tmptx;
+        $.post('https://api.blockcypher.com/v1/btc/test3/txs/new', JSON.stringify(newtx))
+            .then(function(d) {
+                tmptx=d;
+            });
+       var pri_key;
+       pri_key=prompt("Please enter your private key in hex");
+       setTimeout(function(){
+           var tosign = tmptx.tosign;
+           // ajax post method did not work for the signing fuction, so I just use url for sending data here.
+           var url = "http://localhost:9615/sign"+"&"+pri_key+"&"+tosign;
+           $.post(url).then(function(d){
+                const data = JSON.parse(d);
+                console.log(data.signatures.length)
+                var pubkeys = [];
+                var signatures = [];
+                pubkeys.push(data.pubkeys);
+                signatures.push(data.signatures);
+                tmptx.pubkeys = pubkeys;
+                tmptx.signatures = signatures;
 
-}
+                console.log(tmptx);
+                setTimeout(function(){
+                    $.post('https://api.blockcypher.com/v1/btc/test3/txs/send', JSON.stringify(tmptx)).then(function(finaltx) {
+                         console.log(finaltx);
+                    });
+                },3000);
 
+                
+            });
+               
+        }, 3000);   
+    }
 </script>
 <body>   
-    <input placeholder="Enter your BTC address" id=1></input>
+    <input placeholder="Enter your BTC address" id='addr'></input>
     <button onclick="getBalance()">check balance</button>
     <p>Make a payment</p>
     Form:
-    <input placeholder="Enter the payor address"></input>
+    <input placeholder="Enter the payor address" id='payor'></input>
     To:
-    <input placeholder="Enter the receiver address"></input>
+    <input placeholder="Enter the receiver address" id='receiver'></input>
     Amount:
-    <input placeholder="Enter the transfer amount"></input>
-    <button>submit</button>
+    <input placeholder="Enter the transfer amount" id='amount'></input>
+    <button onclick="applyTx()">submit</button>
 
 </body>
 
