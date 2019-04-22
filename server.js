@@ -1,6 +1,5 @@
 var http = require('http');
 var fs = require('fs');
-var index = fs.readFileSync('index.html');
 var codech = fs.readFileSync('CodeCh.html');
 var querystring = require('querystring');
 var bitcoin = require("bitcoinjs-lib");
@@ -12,7 +11,7 @@ var mysql = require('mysql');
 
 var addressData;
 
-
+//setup your mySQL connection here
 var con = mysql.createConnection({
   host: "localhost",
   user: "gary",
@@ -32,13 +31,11 @@ http.createServer(function (req, res) {
 	 //---------------------------
    if(req.method == "POST")
    { 
-		//console.log(req.url);
 	   
 	   if(req.url == "/"){
 		   res.end(JSON.stringify(addressData));
 		 }
 		 else if(req.url == "/containstype"){
-		   			//	console.log(req.method);
 			var data = '';
 			req.on('data', function (chunk) {
 				data += chunk;
@@ -91,7 +88,6 @@ http.createServer(function (req, res) {
 				res.writeHead(200, {'Content-Type': 'text/html'});
 				res.end(codech);
 				con.query("SELECT * FROM recordtable", function (err, result, fields) {
-					if (err) throw err;
 					addressData = result;
 				});
 			}else{

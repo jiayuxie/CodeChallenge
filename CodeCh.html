@@ -1,24 +1,59 @@
 <!DOCTYPE HTML>
 <html> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<body>
 <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.js"></script>
+<input placeholder="Enter your BTC address" id='addr'></input>
+<button onclick="getBalance()">check balance</button>
+<p id='message'></p>
+<div style="height:auto; width:700px">
+        <canvas id='myChart'></canvas>
+</div>
+<p>Make a payment</p>
+Form:
+<input placeholder="Enter the payor address" id='payor'></input>
+To:
+<input placeholder="Enter the receiver address" id='receiver'></input>
+Amount:
+<input placeholder="Enter the transfer amount" id='amount'></input>
+<button onclick="applyTx()">submit</button>
+<p id='message2'></p>
+
 <script>
+
     function getBalance(){
         var data;
         var addr = document.getElementById('addr').value;
         var url = 'https://api.blockcypher.com/v1/btc/test3/addrs/' + addr + '/balance';
-        respone = $.get(url).then(function(d) {data=d});
-        setTimeout(function(){
-            console.log(data);
-        }, 3000);       
+        document.getElementById("message").innerHTML="Searching for balance...";
+        $.get(url).then(function(d) {
+            const addressValue = prompt("create a nickname for this address");
+            //display the balance in the chart
+            const amountValue = d.balance;
+            document.getElementById('message').innerHTML="Your account balance is "+ amountValue;
+            if(addressValue && amountValue){
+	            addData(myChart, addressValue, amountValue);
+	            var data = {'requestType': 'addToDatabase', 'addressInput': addressValue, 'amountInput': amountValue}
+                $.ajax({
+		            url:"http://localhost:9615/containstype",
+		            type:"POST",
+		            data:data,
+		            contentType:"application/json; charset=utf-8",
+		            dataType:"json",
+		            success: function(d){
+		            }
+                }) 
+	
+	        } 
+        });     
     }
     function applyTx(){
+        document.getElementById("message2").innerHTML="Waiting for respone...";
         var output = document.getElementById('receiver').value;
         var input = document.getElementById('payor').value;
         var amount = parseFloat(document.getElementById('amount').value);
-        output = 'mpXfRRcg2x1k5PNEbWiseY1Hm75Y1PqxkT';
-        input = 'myKawjLyRXdorDDAE5cjtyT7JzJF2DH5eK';
-        amount = 1000000;
         var newtx = {
             inputs: [{addresses: [input]}],
             outputs: [{addresses: [output], value: amount}]
@@ -43,31 +78,72 @@
                 signatures.push(data.signatures);
                 tmptx.pubkeys = pubkeys;
                 tmptx.signatures = signatures;
-
-                console.log(tmptx);
-                setTimeout(function(){
                     $.post('https://api.blockcypher.com/v1/btc/test3/txs/send', JSON.stringify(tmptx)).then(function(finaltx) {
                          console.log(finaltx);
-                    });
-                },3000);
-
-                
-            });
-               
+                         document.getElementById("message2").innerHTML="Transaction completed";
+                    });;             
+            });               
         }, 3000);   
     }
-</script>
-<body>   
-    <input placeholder="Enter your BTC address" id='addr'></input>
-    <button onclick="getBalance()">check balance</button>
-    <p>Make a payment</p>
-    Form:
-    <input placeholder="Enter the payor address" id='payor'></input>
-    To:
-    <input placeholder="Enter the receiver address" id='receiver'></input>
-    Amount:
-    <input placeholder="Enter the transfer amount" id='amount'></input>
-    <button onclick="applyTx()">submit</button>
+// create a chart for storing balance information
+
+//called when web is load, pushing all the data on mySQL to chart
+$(document).ready(function(){
+  
+  $.post("http://localhost:9615/")
+   .then(function(d) {
+       addDataToChart(JSON.parse(d))
+     });
+       
+});
+
+function addDataToChart(d){
+   for(var i = 0; i < d.length; i++){
+		addData(myChart, d[i].address, d[i].amount);
+		//console.log(d[i]);
+   }
+ }
+ 
+ 
+ function removeData(chart) {
+    myChart.data.labels.pop();
+    myChart.data.datasets.forEach((dataset) => {
+        dataset.data.pop();
+    });
+    myChart.update();
+}
+
+function addData(chart, label, data) {
+    chart.data.labels.push(label);
+    chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(data);
+    });
+    chart.update();
+} 
+
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        datasets: [{
+            label: '# of balance Overall',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    }
+});
+ 
+
+</script>   
+  
 
 </body>
 
